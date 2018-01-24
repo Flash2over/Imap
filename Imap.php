@@ -4,7 +4,7 @@
  * The Imap PHP class provides a wrapper for commonly used PHP IMAP functions.
  *
  * This class was originally written by Josh Grochowski, and was reformatted and
- * documented by Jeff Geerling.
+ * documented by Jeff Geerling. Then addet the /novalidate-cert option by Thomas Störzner.
  *
  * Usage examples can be found in the included README file, and all methods
  * should have adequate documentation to get you started.
@@ -12,7 +12,6 @@
  * Quick Start:
  * @code
  *   include 'path/to/Imap/JJG/Imap.php';
- *   use \JJG\Imap as Imap;
  *   $mailbox = new Imap($host, $user, $pass, $port, $ssl, $folder);
  *   $mailbox->getMailboxInfo();
  * @endcode
@@ -24,8 +23,6 @@
  * @author Jeff Geerling (geerlingguy).
  */
 
-namespace JJG;
-
 class Imap {
 
   private $host;
@@ -34,6 +31,7 @@ class Imap {
   private $port;
   private $folder;
   private $ssl;
+  private $novalid;
 
   private $baseAddress;
   private $address;
@@ -49,7 +47,9 @@ class Imap {
    * @param $port (int)
    *   Example: 933
    * @param $ssl (bool)
-   *   TRUE to use SSL, FALSE for no SSL.
+   *   TRUE to use SSL, FALSE for no SSL. (if true $novalid must be false!)
+   * @param $novalid (bool)
+   *   TRUE to skip ssl validation (SSL must be false!)
    * @param $folder (string)
    *   IMAP Folder to open.
    * @param $user (string)
@@ -60,7 +60,7 @@ class Imap {
    *
    * @return (empty)
    */
-  public function __construct($host, $user, $pass, $port, $ssl = true, $folder = 'INBOX') {
+  public function __construct($host, $user, $pass, $port, $ssl = true, $novalid = false, $folder = 'INBOX') {
     if ((!isset($host)) || (!isset($user)) || (!isset($pass)) || (!isset($port))) {
       throw new Exception("Error: All Constructor values require a non NULL input.");
     }
@@ -71,8 +71,9 @@ class Imap {
     $this->port = $port;
     $this->folder = $folder;
     $this->ssl = $ssl;
+    $this->novalid = $novalid;
 
-    $this->changeLoginInfo($host, $user, $pass, $port, $ssl, $folder);
+    $this->changeLoginInfo($host, $user, $pass, $port, $ssl, $novalid, $folder);
   }
 
   /**
@@ -86,6 +87,8 @@ class Imap {
   public function changeFolder($folderName) {
     if ($this->ssl) {
       $address = '{' . $this->host . ':' . $this->port . '/imap/ssl}' . $folderName;
+    } elseif ($this->novalid) {
+      $address = '{' . $this->host . ':' . $this->port . '/novalidate-cert}' . $folderName;
     } else {
       $address = '{' . $this->host . ':' . $this->port . '/imap}' . $folderName;
     }
@@ -106,9 +109,12 @@ class Imap {
    *
    * @throws Exception when IMAP can't connect.
    */
-  public function changeLoginInfo($host, $user, $pass, $port, $ssl, $folder) {
+  public function changeLoginInfo($host, $user, $pass, $port, $ssl, $novalid, $folder) {
     if ($ssl) {
       $baseAddress = '{' . $host . ':' . $port . '/imap/ssl}';
+      $address = $baseAddress . $folder;
+    } elseif ($novalid) {
+      $baseAddress = '{' . $host . ':' . $port . '/novalidate-cert}';
       $address = $baseAddress . $folder;
     } else {
       $baseAddress = '{' . $host . ':' . $port . '/imap}';
