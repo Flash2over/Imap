@@ -27,8 +27,8 @@ $host = 'imap.example.com';
 $user = 'johndoe';
 $pass = '12345';
 $port = 993;
-$ssl = true;
-$novalid = false; (Set $ssl "false" and $novalid "true" for novalidate-cert option
+$ssl = true; (Set $ssl "false and $novalid "false" for non SSL option)
+$novalid = false; (Set $ssl "false" and $novalid "true" for novalidate-cert option)
 $folder = 'INBOX';
 $mailbox = new Imap($host, $user, $pass, $port, $ssl, $folder);
 ```
